@@ -83,16 +83,19 @@ class KlippyWebsocket(threading.Thread):
             state = self._screen.apiclient.get_server_info()
             if state is False:
                 if self.reconnect_count > self.max_retries:
-                    self._screen.panels['splash_screen'].add_retry_button()
-                    self._screen.panels['splash_screen'].update_text(
-                        _("Cannot connect to Moonraker")
-                        + f'\n\n{self._url}')
+                    Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE,
+                        lambda x : x.add_retry_button(),
+                            self._screen.panels['splash_screen'])
+                    Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE,
+                        lambda x,y : x.update_text(y),
+                            self._screen.panels['splash_screen'],
+                            _("Cannot connect to Moonraker") + f'\n\n{self._url}')
                 elif self.reconnect_count > 2:
-                    self._screen.panels['splash_screen'].update_text(
-                        _("Cannot connect to Moonraker")
-                        + f'\n\n{self._url}\n\n'
-                        + _("Retrying") + f' #{self.reconnect_count}'
-                    )
+                    Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE,
+                        lambda x,y : x.update_text(y),
+                            self._screen.panels['splash_screen'],
+                            _("Cannot connect to Moonraker") + f'\n\n{self._url}\n\n'
+                                + _("Retrying") + f' #{self.reconnect_count}')
                 return False
             token = self._screen.apiclient.get_oneshot_token()
         except Exception as e:
@@ -167,7 +170,9 @@ class KlippyWebsocket(threading.Thread):
         logging.info(f"Self.connected = {self.is_connected()}")
         self.connected = True
         self.reconnect_count = 0
-        self._screen.panels['splash_screen'].remove_retry_button()
+        Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE,
+            lambda x : x.remove_retry_button(),
+                self._screen.panels['splash_screen'])
         if self.reconnect_timeout is not None:
             GLib.source_remove(self.reconnect_timeout)
             self.reconnect_timeout = None
